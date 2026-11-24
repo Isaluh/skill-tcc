@@ -148,7 +148,7 @@ Git e não fazem parte da estrutura-fonte.
   VPL, TIR, paybacks e ROI. Isso é uma avaliação por indicadores financeiros,
   não uma estimativa automática de preço de mercado do jogo.
 
-### Metodologia documentada, mas sem implementação específica completa
+### Metodologia documentada
 
 `SKILL.md` e `economic-methods.md` orientam análise de viabilidade, modelos
 de negócio, depreciação, tributos, CAC/LTV e priorização econômica. Nem todos
