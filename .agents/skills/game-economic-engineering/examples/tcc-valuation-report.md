@@ -246,6 +246,4 @@ teste com dados artificiais não são usados como resultado do jogo.
 
 Os dados atuais permitem caracterizar o projeto, estimar o custo de
 oportunidade pela jornada informada e simular receitas brutas e valores após
-o tributo informado para volumes hipotéticos. Não permitem afirmar
-viabilidade comercial ou econômica, estimar receita líquida total nem
-calcular indicadores de retorno.
+o tributo informado para volumes hipotéticos. 

@@ -4,10 +4,9 @@ Ferramenta acadêmica de apoio à análise técnica e à Engenharia Econômica d
 projetos de jogos digitais. A Skill utiliza diretrizes e scripts Python para
 organizar premissas e calcular indicadores financeiros de forma determinística.
 
-> **Escopo:** os resultados dependem dos dados fornecidos pela equipe. Os
-> exemplos numéricos dos scripts são didáticos e não representam resultados
-> reais do Ctrl the Witch, salvo quando identificados explicitamente como
-> informações ou estimativas do projeto.
+> **Escopo:**  Os exemplos numéricos dos scripts são didáticos e não 
+> representam resultados reais do Ctrl the Witch, salvo quando identificados 
+> explicitamente como informações ou estimativas do projeto.
 
 ## 1. Identificação do projeto
 
@@ -303,11 +302,9 @@ tenha recebido ou desembolsado esse valor. O desembolso financeiro inicial
 informado é R$ 0,00. Energia e internet foram usadas, mas seus custos não
 foram medidos; isso não significa que todas as categorias custaram zero.
 
-O levantamento anterior informava que a publicação no itch.io era gratuita e
-não tinha receita comercial. O usuário informou que o preço do jogo é
-R$ 20,00 por unidade; a configuração atual da página não foi verificada. A
-meta de 10 cópias/mês é hipotética. As simulações descontam apenas o tributo
-informado de 10% da receita bruta:
+O preço do jogo é R$ 20,00 por unidade; a configuração atual da página não 
+foi verificada. A meta de 10 cópias/mês é hipotética. As simulações descontam 
+apenas o tributo informado de 10% da receita bruta:
 
 | Cópias/mês | Cópias/ano | Receita bruta/mês | Tributo/mês | Após tributo/mês | Receita bruta/ano | Tributo/ano | Após tributo/ano |
 |---:|---:|---:|---:|---:|---:|---:|---:|
@@ -315,13 +312,9 @@ informado de 10% da receita bruta:
 | 10 | 120 | R$ 200,00 | R$ 20,00 | R$ 180,00 | R$ 2.400,00 | R$ 240,00 | R$ 2.160,00 |
 | 25 | 300 | R$ 500,00 | R$ 50,00 | R$ 450,00 | R$ 6.000,00 | R$ 600,00 | R$ 5.400,00 |
 
-Esses cenários não representam vendas realizadas nem previsões. “Após
-tributo” não é a receita líquida total: ainda faltam a participação do
-itch.io, taxas de processamento, reembolsos, outros custos e a confirmação
-do regime e da base tributária. Considerando somente o tributo informado,
-seriam necessárias 1.560 cópias a R$ 18,00 após tributo para recuperar os
-R$ 28.080,00 estimados de custo de oportunidade. Esse não é o ponto de
-equilíbrio completo.
+Considerando somente o tributo informado, seriam necessárias 1.560 cópias a 
+R$ 18,00 após tributo para recuperar os R$ 28.080,00 estimados de custo de 
+oportunidade. Esse não é o ponto de equilíbrio completo.
 
 Segundo a [documentação oficial de pagamentos do itch.io](https://itch.io/docs/creators/payments),
 consultada em 2026-11-24, o vendedor configura sua participação entre 0% e
@@ -366,9 +359,6 @@ completo para o Ctrl the Witch.
 
 ## 12. Testes e validação
 
-O projeto não declara frameworks de teste nem dependências externas. Os testes
-usam somente `unittest`, biblioteca padrão do Python:
-
 ```powershell
 python -m unittest discover -s .agents/skills/game-economic-engineering/tests -p "test_*.py" -v
 ```
@@ -401,60 +391,7 @@ python .agents/skills/game-economic-engineering/scripts/agile_evm.py
 comando. As execuções diretas dos demais módulos são exemplos; não interprete
 saídas hipotéticas como resultados reais do jogo.
 
-## 13. Conteúdos de Engenharia Econômica
-
-`references/economic-methods.md` e `SKILL.md` documentam a aplicação dos
-seguintes conteúdos:
-
-| Conteúdo documentado | Relação com a Skill |
-|---|---|
-| Processo de decisão e comparação de alternativas | Comparar desenvolver, adquirir, contratar, adiar ou substituir componentes. |
-| Valor do dinheiro no tempo e TMA | VP, VF, taxa por período e desconto de fluxos. |
-| Custos e fluxo de caixa | Investimento, custo de oportunidade, OpEx, CapEx, tributos e fluxos líquidos. |
-| Vendas e ponto de equilíbrio | Simulação de receita bruta; cálculos líquidos e de break-even dependem de custos/taxas informados. |
-| Viabilidade econômica | VPL, TIR, Payback simples e descontado e ROI. |
-| Depreciação e tributos | Orientação metodológica; não há calculadora específica ou dados tributários do TCC. |
-| Métricas de produtos digitais | CAC e LTV quando aplicáveis; dependem de dados de aquisição, receita e clientes. |
-| GVA/EVM | VP, VA, CR, BAC, indicadores de prazo e custo e EAC. |
-| Proposta econômica e estratégia | Riscos, premissas, modelo de negócio, melhorias e recomendação condicionada aos dados. |
-| Princípio do Bom o Suficiente e backlog | Relacionar benefício esperado, esforço, custo, risco e prioridade. |
-| Substituição de legado | Comparar manutenção, migração, incompatibilidade e custos futuros. |
-
-**Relação com as 12 aulas:** os arquivos do repositório não contêm a ementa,
-o plano de ensino ou os tópicos individuais das 12 aulas. Para não atribuir
-conteúdos curriculares sem evidência, a relação acima é por tema e não por
-número de aula. A correspondência aula a aula deve ser completada com o
-material oficial da disciplina.
-
-## 14. Limitações e premissas
-
-- Os quantitativos técnicos são os registrados no relatório e não substituem
-  uma avaliação qualitativa ou revisão independente do jogo.
-- A equipe informou 9 meses, 6 horas diárias para o grupo e R$ 20,00/h para
-  a equipe; dias trabalhados por semana não foram apontados. Custos de
-  oportunidade são apresentados como cenários estimados.
-- O custo de oportunidade não equivale automaticamente a desembolso.
-- O desembolso inicial informado é R$ 0,00, mas energia e internet não foram
-  mensuradas e outros custos indiretos, CapEx e tributos não foram levantados.
-- O preço futuro de R$ 20,00 e 10 cópias mensais são premissas de plano; a
-  publicação atual continua identificada como gratuita até confirmação de
-  mudança.
-- Taxas do itch.io e do processador dependem de configuração, país, moeda,
-  método de pagamento e transações. A documentação oficial não determina a
-  taxa efetiva deste projeto.
-- Receita comercial atual informada como zero não permite assumir receita
-  futura nula ou positiva.
-- VPL, TIR e Payback exigem fluxos por período e periodicidade; VPL e Payback
-  descontado também exigem TMA compatível.
-- ROI exige investimento, retorno líquido definido e horizonte de análise.
-- EVM exige registros de VP, VA, CR e BAC por período. O exemplo do script
-  não é histórico do TCC.
-- Depreciação, CAC/LTV, modelo de negócio, impostos e valor de mercado
-  dependem de dados e análises que não estão completos no relatório.
-- A Skill pode orientar a coleta e interpretação; a confiabilidade final
-  depende da origem e qualidade dos dados fornecidos.
-
-## 15. Autores e contexto acadêmico
+## 13. Autores e contexto acadêmico
 
 Projeto desenvolvido no contexto do Bacharelado em Engenharia de Software da
 Faculdade SENAI FATESG, na disciplina de Engenharia Econômica.
@@ -462,7 +399,7 @@ Faculdade SENAI FATESG, na disciplina de Engenharia Econômica.
 **Integrantes:**
 
 - Integrante 1: Augusto Lobo 
-- Integrante 2: Heloira Medeiros
+- Integrante 2: Heloisa Medeiros
 
 **Docente:** Msc. Ujeverson Tavares Sampaio
 
