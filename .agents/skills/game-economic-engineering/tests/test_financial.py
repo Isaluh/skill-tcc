@@ -12,8 +12,14 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from agile_evm import calculate_evm
-from cash_flow import calculate_cash_flow
-from cost_estimator import estimate_development_cost
+from cash_flow import (
+    calculate_cash_flow,
+    ctrl_the_witch_current_scenario as cash_flow_current_scenario,
+)
+from cost_estimator import (
+    estimate_development_cost,
+    estimate_development_scenarios,
+)
 from game_valuation import (
     ctrl_the_witch_current_scenario,
     evaluate_game_project,
@@ -22,16 +28,57 @@ from game_valuation import (
 from npv_irr import future_value, irr, npv, present_value
 from payback import discounted_payback, simple_payback
 from roi import calculate_roi
+from sales_model import (
+    calculate_break_even_units,
+    calculate_net_revenue,
+    simulate_sales_scenarios,
+)
 
 
 class CostEstimatorTests(unittest.TestCase):
-    def test_calcula_horas_e_custo_de_oportunidade_do_ctrl_the_witch(self):
+    def test_calcula_horas_e_custo_de_oportunidade_para_entradas_genericas(self):
         estimate = estimate_development_cost(2, 90, 6, 20)
 
         self.assertEqual(estimate["total_team_hours"], 540)
         self.assertEqual(estimate["hours_per_member"], 270)
         self.assertEqual(estimate["labor_opportunity_cost"], 10800)
         self.assertIsNone(estimate["total_additional_disbursements"])
+
+    def test_cenarios_retrospectivos_de_nove_meses_por_dias_semanais(self):
+        result = estimate_development_scenarios(
+            team_members=2,
+            calendar_weeks=39,
+            workdays_per_week=[5, 6, 7],
+            daily_team_hours=6,
+            opportunity_cost_per_team_hour=20,
+        )
+
+        self.assertEqual(
+            [
+                (
+                    item["estimated_workdays"],
+                    item["total_team_hours"],
+                    item["labor_opportunity_cost"],
+                )
+                for item in result["scenarios"]
+            ],
+            [(195, 1170, 23400), (234, 1404, 28080), (273, 1638, 32760)],
+        )
+        self.assertTrue(all(
+            item["classification"] == "cenário estimado retrospectivo"
+            for item in result["scenarios"]
+        ))
+
+    def test_rejeita_cenarios_de_esforco_invalidos(self):
+        with self.subTest("semanas inválidas"):
+            with self.assertRaises(ValueError):
+                estimate_development_scenarios(2, 0, [5], 6, 20)
+        with self.subTest("dias repetidos"):
+            with self.assertRaises(ValueError):
+                estimate_development_scenarios(2, 39, [5, 5], 6, 20)
+        with self.subTest("mais de sete dias"):
+            with self.assertRaises(ValueError):
+                estimate_development_scenarios(2, 39, [8], 6, 20)
 
     def test_calcula_esforco_com_varios_integrantes_e_desembolsos(self):
         estimate = estimate_development_cost(
@@ -338,8 +385,36 @@ class GameValuationTests(unittest.TestCase):
         self.assertIsNone(scenario["future_cash_flows"])
         self.assertIsNone(scenario["tma"])
         self.assertEqual(scenario["current_commercial_revenue"]["value"], 0)
-        self.assertEqual(scenario["initial_investment"]["value"], 10800)
-        self.assertEqual(scenario["initial_investment"]["classification"], "estimado")
+        self.assertEqual(
+            scenario["financial_initial_investment"]["value"], 0
+        )
+        self.assertEqual(
+            scenario["economic_investment_scenarios"]["scenarios"][0][
+                "labor_opportunity_cost"
+            ],
+            23400,
+        )
+        self.assertEqual(
+            scenario["future_commercial_plan"]["gross_sales_scenarios"][
+                "scenarios"
+            ]["meta de 10 cópias/mês"]["gross_revenue_per_year"],
+            2400,
+        )
+        self.assertIsNone(
+            scenario["future_commercial_plan"]["gross_sales_scenarios"][
+                "scenarios"
+            ]["meta de 10 cópias/mês"]["net_revenue_per_year"]
+        )
+        self.assertIn(
+            "tax_amount",
+            scenario["future_commercial_plan"]["gross_sales_scenarios"][
+                "scenarios"
+            ]["meta de 10 cópias/mês"]["net_revenue_missing_inputs"],
+        )
+        self.assertEqual(
+            scenario["future_commercial_plan"]["classification"],
+            "plano informado e hipótese, não preço atual nem demanda validada",
+        )
         for metric in scenario["indicators"].values():
             self.assertIsNone(metric["value"])
             self.assertEqual(
@@ -371,6 +446,146 @@ class GameValuationTests(unittest.TestCase):
             "real (informado)",
         )
         self.assertIsNone(current["future_cash_flows"])
+
+
+class SalesModelTests(unittest.TestCase):
+    def test_simula_receita_bruta_mensal_e_anual_sem_taxas(self):
+        result = simulate_sales_scenarios(
+            unit_price=20,
+            monthly_copies_by_scenario={
+                "2 cópias/mês": 2,
+                "meta": 10,
+                "25 cópias/mês": 25,
+            },
+        )["scenarios"]
+
+        self.assertEqual(
+            [
+                result[name]["gross_revenue_per_month"]
+                for name in ("2 cópias/mês", "meta", "25 cópias/mês")
+            ],
+            [40, 200, 500],
+        )
+        self.assertEqual(
+            [
+                result[name]["gross_revenue_per_year"]
+                for name in ("2 cópias/mês", "meta", "25 cópias/mês")
+            ],
+            [480, 2400, 6000],
+        )
+        self.assertEqual(result["meta"]["copies_per_year"], 120)
+
+    def test_rejeita_entradas_invalidas_na_simulacao_de_vendas(self):
+        with self.subTest("preço negativo"):
+            with self.assertRaises(ValueError):
+                simulate_sales_scenarios(-1, {"meta": 10})
+        with self.subTest("preço não finito"):
+            with self.assertRaises(ValueError):
+                simulate_sales_scenarios(math.nan, {"meta": 10})
+        with self.subTest("cópias fracionárias"):
+            with self.assertRaises(ValueError):
+                simulate_sales_scenarios(20, {"meta": 1.5})
+        with self.subTest("período inválido"):
+            with self.assertRaises(ValueError):
+                simulate_sales_scenarios(20, {"meta": 10}, 0)
+        with self.subTest("cenários vazios"):
+            with self.assertRaises(ValueError):
+                simulate_sales_scenarios(20, {})
+
+    def test_receita_liquida_permanece_desconhecida_sem_taxas(self):
+        result = calculate_net_revenue(gross_revenue=200)
+
+        self.assertIsNone(result["revenue_after_fees_before_taxes"])
+        self.assertIsNone(result["net_revenue"])
+        self.assertIn("platform_share_rate", result["missing_fee_inputs"])
+        self.assertIn("tax_amount", result["missing_net_inputs"])
+
+    def test_receita_liquida_aplica_taxas_e_tributos_explicitamente_informados(self):
+        # Valores sintéticos para validar a fórmula; não representam o projeto.
+        result = calculate_net_revenue(
+            gross_revenue=200,
+            platform_share_rate=0.10,
+            processor_percentage_rate=0.029,
+            processor_fixed_fee_per_transaction=0.30,
+            transaction_count=10,
+            tax_amount=5,
+        )
+
+        self.assertAlmostEqual(result["platform_fee"], 20)
+        self.assertAlmostEqual(result["processor_percentage_fee"], 5.8)
+        self.assertAlmostEqual(result["processor_fixed_fee"], 3)
+        self.assertAlmostEqual(result["revenue_after_fees_before_taxes"], 171.2)
+        self.assertAlmostEqual(result["net_revenue"], 166.2)
+        self.assertEqual(result["missing_net_inputs"], [])
+
+    def test_receita_apos_taxas_pode_ser_calculada_sem_presumir_tributos(self):
+        result = calculate_net_revenue(
+            gross_revenue=100,
+            platform_share_rate=0,
+            processor_percentage_rate=0,
+            processor_fixed_fee_per_transaction=0,
+        )
+
+        self.assertEqual(result["revenue_after_fees_before_taxes"], 100)
+        self.assertIsNone(result["net_revenue"])
+        self.assertEqual(result["missing_net_inputs"], ["tax_amount"])
+
+    def test_taxa_fixa_sem_quantidade_de_transacoes_impede_receita_liquida(self):
+        result = calculate_net_revenue(
+            gross_revenue=100,
+            platform_share_rate=0,
+            processor_percentage_rate=0,
+            processor_fixed_fee_per_transaction=0.25,
+        )
+
+        self.assertIsNone(result["revenue_after_fees_before_taxes"])
+        self.assertIn("transaction_count", result["missing_fee_inputs"])
+
+    def test_rejeita_taxas_e_contagem_de_transacoes_invalidas(self):
+        with self.subTest("participação acima de 100%"):
+            with self.assertRaises(ValueError):
+                calculate_net_revenue(100, platform_share_rate=1.1)
+        with self.subTest("taxa percentual negativa"):
+            with self.assertRaises(ValueError):
+                calculate_net_revenue(100, processor_percentage_rate=-0.1)
+        with self.subTest("transações não inteiras"):
+            with self.assertRaises(ValueError):
+                calculate_net_revenue(100, transaction_count=1.5)
+
+    def test_calcula_ponto_de_equilibrio_com_arredondamento_para_copias(self):
+        result = calculate_break_even_units(1000, 15)
+        self.assertTrue(result["calculable"])
+        self.assertEqual(result["units"], 67)
+        self.assertEqual(calculate_break_even_units(0, 15)["units"], 0)
+
+    def test_ponto_de_equilibrio_nao_assume_margem_ou_custos_desconhecidos(self):
+        missing = calculate_break_even_units(None, 15)
+        no_margin = calculate_break_even_units(1000, 0)
+        negative_margin = calculate_break_even_units(1000, -1)
+
+        self.assertFalse(missing["calculable"])
+        self.assertIn("fixed_cost", missing["missing_inputs"])
+        self.assertFalse(no_margin["calculable"])
+        self.assertFalse(negative_margin["calculable"])
+        with self.assertRaises(ValueError):
+            calculate_break_even_units(-1, 15)
+
+
+class CurrentScenarioTests(unittest.TestCase):
+    def test_fluxo_de_caixa_separa_desembolso_de_custo_economico(self):
+        scenario = cash_flow_current_scenario()
+
+        self.assertEqual(
+            scenario["financial_initial_investment"]["amount"], 0
+        )
+        self.assertEqual(
+            [item["labor_opportunity_cost"]
+             for item in scenario["labor_investment"]["scenarios"]],
+            [23400, 28080, 32760],
+        )
+        self.assertEqual(scenario["current_commercial_revenue"]["amount"], 0)
+        self.assertIsNone(scenario["operating_costs"])
+        self.assertIsNone(scenario["taxes"])
 
 
 if __name__ == "__main__":

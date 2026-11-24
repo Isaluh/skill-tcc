@@ -64,6 +64,12 @@ Separar:
 - Custos operacionais (OpEx).
 - Investimentos adicionais (CapEx).
 - Tributos.
+- Taxas de marketplace e processamento, identificando se são percentuais ou
+  fixas por transação.
+
+Não transforme receita bruta em receita líquida sem conhecer os encargos
+aplicáveis. Se dados essenciais estiverem ausentes, mantenha o resultado
+líquido como não calculável e registre as variáveis pendentes.
 
 ## 4. Custos, preço e valor em TI
 
@@ -85,6 +91,11 @@ Separar:
 ### Custo de oportunidade
 
 Representa o valor da melhor alternativa sacrificada.
+
+Quando a taxa informada é por hora da equipe, calcular custo de oportunidade
+como horas totais da equipe × taxa horária da equipe; não multiplicar
+novamente pelo número de integrantes. Se houver divisão igual de esforço,
+horas por pessoa podem ser apresentadas apenas como hipótese separada.
 
 ### Markup
 
@@ -138,6 +149,53 @@ ROI = [(Retorno - Investimento) / Investimento] * 100
 
 Identificar claramente o que está sendo considerado
 como retorno e qual o período analisado.
+
+### Ponto de equilíbrio
+
+Margem de contribuição unitária = preço por unidade − custos variáveis por
+unidade.
+
+Unidades para equilíbrio = teto(custos fixos / margem de contribuição
+unitária), desde que a margem seja positiva. Os custos variáveis devem incluir
+taxas percentuais, taxas por transação rateadas com base em transações
+conhecidas e tributos aplicáveis. Margem nula ou negativa não permite
+recuperar custos por aumento do volume. Custos fixos ou margens desconhecidos
+impedem o cálculo.
+
+Dividir custo pelo preço bruto pode produzir somente um limite bruto
+teórico: não é ponto de equilíbrio completo quando há taxas, tributos ou
+custos variáveis não mensurados. Desembolso inicial igual a zero também não
+prova que o custo financeiro total do projeto seja zero.
+
+### Receita de vendas digitais
+
+Receita bruta simplificada = preço unitário × unidades vendidas.
+
+Receita após taxas = receita bruta − participação da plataforma − taxas
+percentuais do processador − taxas fixas por transação.
+
+Receita líquida após tributos = receita após taxas − tributos efetivamente
+apurados. Tributos não devem ser estimados sem jurisdição, regime, base e
+valores adequados. Reembolsos, descontos, conversão cambial e outros custos
+também podem afetar recebimentos.
+
+Na [página oficial de pagamentos do itch.io](https://itch.io/docs/creators/payments),
+consultada em 2026-11-24,
+o vendedor pode configurar o Open Revenue Sharing de 0% a 100%. A página usa
+10% somente como exemplo e mostra taxas de processadores tipicamente próximas
+a US$ 0,30 mais 2,9% em exemplos de USD. Os encargos podem variar por
+processador, conta, transação e moeda. A modalidade “Direct to you” e
+“Collected by itch.io (Payouts)” também difere em moeda, merchant of record
+e responsabilidades de tributos/VAT. Esses valores e regras não confirmam a
+configuração de um jogo específico e não devem ser aplicados diretamente a
+uma venda em reais.
+
+Em `sales_model.py`, `simulate_sales_scenarios()` calcula apenas cópias e
+receita bruta; não é previsão. `calculate_net_revenue()` exige as taxas e a
+contagem de transações para retornar valores após taxas, e um valor de
+tributos informado para retornar o líquido pós-tributos. `None` significa
+desconhecido e não é substituído por zero. `calculate_break_even_units()`
+requer custo fixo e margem de contribuição unitária conhecidos.
 
 ## 6. Depreciação e tributos
 

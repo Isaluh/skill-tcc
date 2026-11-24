@@ -23,16 +23,21 @@ def estimate_development_cost(
     team_members,
     development_days,
     daily_team_hours,
-    opportunity_cost_per_hour_per_member,
+    opportunity_cost_per_team_hour=None,
     additional_disbursements=None,
+    *,
+    opportunity_cost_per_hour_per_member=None,
 ):
     """
     Estima horas de trabalho, custo de oportunidade e desembolsos informados.
 
     `daily_team_hours` representa as horas totais trabalhadas pela equipe por
-    dia. `additional_disbursements` deve ser um mapeamento de categorias para
-    valores monetários efetivamente pagos ou estimados, como licenças e assets.
-    Quando não informado, os desembolsos permanecem desconhecidos, não zero.
+    dia. `opportunity_cost_per_team_hour` é o custo por hora da equipe inteira.
+    O argumento nomeado `opportunity_cost_per_hour_per_member` é mantido por
+    compatibilidade e tem o mesmo significado de custo por hora da equipe.
+    `additional_disbursements` mapeia categorias para valores pagos ou
+    estimados. Quando omitido, os desembolsos permanecem desconhecidos, não
+    zero.
 
     Retorna um dicionário com as horas, os custos separados e o subtotal
     econômico conhecido (mão de obra mais desembolsos informados).
@@ -50,9 +55,20 @@ def estimate_development_cost(
     _validate_nonnegative_number(
         "daily_team_hours", daily_team_hours, allow_zero=False
     )
+    if (
+        opportunity_cost_per_team_hour is not None
+        and opportunity_cost_per_hour_per_member is not None
+    ):
+        raise ValueError(
+            "Informe o custo horário da equipe apenas uma vez."
+        )
+    if opportunity_cost_per_team_hour is None:
+        opportunity_cost_per_team_hour = opportunity_cost_per_hour_per_member
+    if opportunity_cost_per_team_hour is None:
+        raise TypeError("Informe o custo de oportunidade por hora da equipe.")
+
     _validate_nonnegative_number(
-        "opportunity_cost_per_hour_per_member",
-        opportunity_cost_per_hour_per_member,
+        "opportunity_cost_per_team_hour", opportunity_cost_per_team_hour
     )
 
     if additional_disbursements is not None:
@@ -69,9 +85,7 @@ def estimate_development_cost(
     total_team_hours = development_days * daily_team_hours
     hours_per_member = total_team_hours / team_members
     labor_opportunity_cost = (
-        hours_per_member
-        * team_members
-        * opportunity_cost_per_hour_per_member
+        total_team_hours * opportunity_cost_per_team_hour
     )
 
     total_additional_disbursements = (
@@ -89,8 +103,10 @@ def estimate_development_cost(
         "daily_team_hours": daily_team_hours,
         "total_team_hours": total_team_hours,
         "hours_per_member": hours_per_member,
+        "opportunity_cost_per_team_hour": opportunity_cost_per_team_hour,
+        # Chave preservada para consumidores da interface anterior.
         "opportunity_cost_per_hour_per_member": (
-            opportunity_cost_per_hour_per_member
+            opportunity_cost_per_team_hour
         ),
         "labor_opportunity_cost": labor_opportunity_cost,
         "additional_disbursements": (
@@ -100,6 +116,71 @@ def estimate_development_cost(
         ),
         "total_additional_disbursements": total_additional_disbursements,
         "total_known_economic_cost": total_known_economic_cost,
+    }
+
+
+def estimate_development_scenarios(
+    team_members,
+    calendar_weeks,
+    workdays_per_week,
+    daily_team_hours,
+    opportunity_cost_per_team_hour,
+):
+    """
+    Estima esforço retrospectivo por cenários de dias trabalhados na semana.
+
+    Cada cenário assume a mesma média diária da equipe durante as semanas
+    informadas. Os resultados são cenários, não registros de horas efetivas.
+    """
+    if (
+        isinstance(calendar_weeks, bool)
+        or not isinstance(calendar_weeks, int)
+        or calendar_weeks <= 0
+    ):
+        raise ValueError("calendar_weeks deve ser um inteiro positivo.")
+
+    if (
+        isinstance(workdays_per_week, (str, bytes))
+        or not isinstance(workdays_per_week, (list, tuple))
+        or not workdays_per_week
+    ):
+        raise TypeError("workdays_per_week deve ser uma lista ou tupla não vazia.")
+
+    if len(set(workdays_per_week)) != len(workdays_per_week):
+        raise ValueError("workdays_per_week não deve conter valores duplicados.")
+
+    scenarios = []
+    for days_per_week in workdays_per_week:
+        if (
+            isinstance(days_per_week, bool)
+            or not isinstance(days_per_week, int)
+            or not 1 <= days_per_week <= 7
+        ):
+            raise ValueError("Cada cenário deve conter de 1 a 7 dias por semana.")
+
+        estimated_workdays = calendar_weeks * days_per_week
+        estimate = estimate_development_cost(
+            team_members=team_members,
+            development_days=estimated_workdays,
+            daily_team_hours=daily_team_hours,
+            opportunity_cost_per_team_hour=opportunity_cost_per_team_hour,
+            additional_disbursements=None,
+        )
+        scenarios.append({
+            "workdays_per_week": days_per_week,
+            "estimated_workdays": estimated_workdays,
+            "total_team_hours": estimate["total_team_hours"],
+            "hours_per_member_if_equal": estimate["hours_per_member"],
+            "labor_opportunity_cost": estimate["labor_opportunity_cost"],
+            "classification": "cenário estimado retrospectivo",
+        })
+
+    return {
+        "team_members": team_members,
+        "calendar_weeks": calendar_weeks,
+        "daily_team_hours": daily_team_hours,
+        "opportunity_cost_per_team_hour": opportunity_cost_per_team_hour,
+        "scenarios": scenarios,
     }
 
 
@@ -116,7 +197,14 @@ def print_development_cost_estimate(estimate):
     print(f"Dias de desenvolvimento: {estimate['development_days']}")
     print(f"Horas diárias da equipe: {estimate['daily_team_hours']:g}")
     print(f"Horas totais da equipe: {estimate['total_team_hours']:g}")
-    print(f"Horas estimadas por integrante: {estimate['hours_per_member']:g}")
+    print(
+        "Média por integrante se a divisão for igual: "
+        f"{estimate['hours_per_member']:g}"
+    )
+    print(
+        "Custo de oportunidade por hora da equipe: "
+        f"R$ {_format_brl(estimate['opportunity_cost_per_team_hour'])}"
+    )
     print(
         "Custo de oportunidade da mão de obra: "
         f"R$ {_format_brl(estimate['labor_opportunity_cost'])}"
@@ -150,13 +238,24 @@ def print_development_cost_estimate(estimate):
 
 
 if __name__ == "__main__":
-    # Premissas estimadas fornecidas para o Ctrl the Witch.
-    estimativa = estimate_development_cost(
+    # Cenários retrospectivos; não são registros de horas efetivamente trabalhadas.
+    scenarios = estimate_development_scenarios(
         team_members=2,
-        development_days=90,
+        calendar_weeks=39,
+        workdays_per_week=[5, 6, 7],
         daily_team_hours=6,
-        opportunity_cost_per_hour_per_member=20.00,
-        additional_disbursements=None,
+        opportunity_cost_per_team_hour=20.00,
     )
 
-    print_development_cost_estimate(estimativa)
+    print("\nCENÁRIOS ESTIMADOS — CTRL THE WITCH")
+    print("Nove meses são aproximados como 39 semanas.")
+    print("A jornada de 6 horas e a taxa de R$ 20,00 são da equipe inteira.")
+    print("Nenhum cenário representa apontamento histórico de horas.")
+    for scenario in scenarios["scenarios"]:
+        print(
+            f"\n{scenario['workdays_per_week']} dias/semana: "
+            f"{scenario['estimated_workdays']} dias estimados, "
+            f"{scenario['total_team_hours']:g} horas de equipe, "
+            f"R$ {_format_brl(scenario['labor_opportunity_cost'])} "
+            "de custo de oportunidade."
+        )

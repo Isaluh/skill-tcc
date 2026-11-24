@@ -9,11 +9,13 @@ from collections.abc import Iterable, Mapping
 from math import isfinite
 from numbers import Real
 
+from cost_estimator import estimate_development_scenarios
 from npv_irr import irr as _irr
 from npv_irr import npv as _npv
 from payback import discounted_payback as _discounted_payback
 from payback import simple_payback as _simple_payback
 from roi import calculate_roi as _calculate_roi
+from sales_model import calculate_net_revenue, simulate_sales_scenarios
 
 
 def _validate_investment_and_flows(initial_investment, future_cash_flows):
@@ -238,6 +240,31 @@ def ctrl_the_witch_current_scenario():
         "value": None,
         "status": "não calculável de forma significativa",
     }
+    labor_scenarios = estimate_development_scenarios(
+        team_members=2,
+        calendar_weeks=39,
+        workdays_per_week=[5, 6, 7],
+        daily_team_hours=6,
+        opportunity_cost_per_team_hour=20,
+    )
+    sales_scenarios = simulate_sales_scenarios(
+        unit_price=20,
+        monthly_copies_by_scenario={
+            "2 cópias/mês": 2,
+            "meta de 10 cópias/mês": 10,
+            "25 cópias/mês": 25,
+        },
+    )
+    for result in sales_scenarios["scenarios"].values():
+        monthly_net = calculate_net_revenue(
+            result["gross_revenue_per_month"]
+        )
+        annual_net = calculate_net_revenue(
+            result["gross_revenue_per_year"]
+        )
+        result["net_revenue_per_month"] = monthly_net["net_revenue"]
+        result["net_revenue_per_year"] = annual_net["net_revenue"]
+        result["net_revenue_missing_inputs"] = monthly_net["missing_net_inputs"]
 
     return {
         "project": "Ctrl the Witch",
@@ -247,25 +274,57 @@ def ctrl_the_witch_current_scenario():
         },
         "publication": {
             "platform": "itch.io",
-            "price": "gratuito",
+            "current_price": "gratuito",
             "classification": "real (informado)",
         },
-        "initial_investment": {
-            "value": 10800.00,
-            "classification": "estimado",
-            "description": (
-                "Custo de oportunidade estimado da mão de obra; "
-                "não representa necessariamente desembolso financeiro."
-            ),
+        "development_calendar_months": {
+            "value": 9,
+            "classification": "informado pela equipe",
+        },
+        "calendar_weeks_approx": {
+            "value": 39,
+            "classification": "premissa de conversão",
+        },
+        "financial_initial_investment": {
+            "value": 0.00,
+            "classification": "informado pela equipe",
+            "description": "Desembolso inicial informado, não custo total do projeto.",
+        },
+        "economic_investment_scenarios": {
+            "daily_team_hours": 6,
+            "team_hourly_opportunity_cost": 20.00,
+            "scenarios": labor_scenarios["scenarios"],
+            "classification": "estimativas retrospectivas",
         },
         "current_commercial_revenue": {
             "value": 0.00,
             "classification": "real (informado)",
             "description": "Sem vendas ou doações recebidas até o momento.",
         },
+        "future_commercial_plan": {
+            "model": "venda única",
+            "unit_price": 20.00,
+            "monthly_sales_target": 10,
+            "classification": (
+                "plano informado e hipótese, não preço atual nem demanda validada"
+            ),
+            "gross_sales_scenarios": sales_scenarios,
+        },
         "additional_costs": {
             "value": None,
             "classification": "não informado",
+        },
+        "platform_and_processing_fees": {
+            "value": None,
+            "classification": "não informado",
+        },
+        "taxes": {
+            "value": None,
+            "classification": "não informado",
+        },
+        "operating_costs": {
+            "value": None,
+            "classification": "não mensurado",
         },
         "future_cash_flows": None,
         "tma": None,
@@ -326,20 +385,43 @@ def print_ctrl_the_witch_current_scenario(scenario):
     print(
         "Publicação: "
         f"{scenario['publication']['platform']}, "
-        f"{scenario['publication']['price']} "
+        f"{scenario['publication']['current_price']} "
         f"({scenario['publication']['classification']})"
     )
     print(
-        "Investimento econômico estimado em mão de obra: "
-        f"R$ {_format_brl(scenario['initial_investment']['value'])}"
+        "Desembolso financeiro inicial informado: "
+        f"R$ {_format_brl(scenario['financial_initial_investment']['value'])}"
     )
+    print("Custo de oportunidade da mão de obra — cenários estimados:")
+    for estimate in scenario["economic_investment_scenarios"]["scenarios"]:
+        print(
+            f"- {estimate['workdays_per_week']} dias/semana: "
+            f"{estimate['total_team_hours']:g} horas de equipe; "
+            f"R$ {_format_brl(estimate['labor_opportunity_cost'])}."
+        )
     print(
         "Receita comercial atual informada: "
         f"R$ {_format_brl(scenario['current_commercial_revenue']['value'])} "
         "(sem vendas nem doações)"
     )
-    print("Custos adicionais: não informados; não foram assumidos como zero.")
-    print("Fluxos futuros, TMA e horizonte de análise: não informados.")
+    print(
+        "Plano futuro informado: venda única por R$ 20,00, com meta de "
+        "10 cópias/mês. As simulações abaixo são receita bruta hipotética:"
+    )
+    for name, result in scenario["future_commercial_plan"][
+        "gross_sales_scenarios"
+    ]["scenarios"].items():
+        print(
+            f"- {name}: bruto R$ "
+            f"{_format_brl(result['gross_revenue_per_month'])}/mês; "
+            f"R$ {_format_brl(result['gross_revenue_per_year'])}/ano; "
+            "líquido não calculável com os dados disponíveis."
+        )
+    print(
+        "Taxas da plataforma/processamento, tributos e custos operacionais: "
+        "não informados; não foram assumidos como zero."
+    )
+    print("Fluxos líquidos, TMA e horizonte de análise: não informados.")
     print("\nIndicadores:")
 
     for name, label in (
@@ -354,7 +436,8 @@ def print_ctrl_the_witch_current_scenario(scenario):
 
     print(
         "\nA receita atual igual a zero é um dado observado/informado; "
-        "não foi projetada para períodos futuros."
+        "não foi projetada para períodos futuros. O preço e as vendas futuras "
+        "são hipóteses separadas, não receita realizada."
     )
 
 

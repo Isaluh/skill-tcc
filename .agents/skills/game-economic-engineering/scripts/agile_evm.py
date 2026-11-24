@@ -127,15 +127,16 @@ def print_evm(report):
 
 
 if __name__ == "__main__":
-
-    # Dados fictícios para teste.
-    # Não representam medições reais do Ctrl the Witch.
+    print(
+        "\nExemplo didático hipotético — "
+        "não representa o Ctrl the Witch."
+    )
 
     report = calculate_evm(
-        planned_value=8000,
-        earned_value=7000,
-        actual_cost=7500,
-        bac=10800
+        planned_value=24000,
+        earned_value=22000,
+        actual_cost=23000,
+        bac=30000
     )
 
     print_evm(report)

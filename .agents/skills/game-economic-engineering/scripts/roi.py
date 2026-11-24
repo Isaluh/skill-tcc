@@ -49,12 +49,15 @@ def calculate_roi(investment, total_returns):
 
 if __name__ == "__main__":
     # Exemplo didático hipotético.
-    investimento = 10800.00
-    retorno_total = 14700.00
+    investimento = 20000.00
+    retorno_total = 28000.00
 
     resultado = calculate_roi(investimento, retorno_total)
 
-    print("========== EXEMPLO DIDÁTICO — ROI ==========")
+    print(
+        "========== EXEMPLO DIDÁTICO — ROI "
+        "(NÃO REPRESENTA O CTRL THE WITCH) =========="
+    )
     print(f"Investimento: R$ {investimento:.2f}")
     print(f"Retorno total: R$ {retorno_total:.2f}")
     print(f"ROI: {resultado:.2f}%")

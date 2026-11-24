@@ -10,6 +10,8 @@ Projeto: Game Economic Engineering
 from math import isfinite
 from numbers import Real
 
+from cost_estimator import estimate_development_scenarios
+
 
 def _validate_money_series(name, values, periods=None):
     """Valida uma sequência de valores monetários não negativos."""
@@ -170,18 +172,37 @@ def print_cash_flow(report):
 
 def ctrl_the_witch_current_scenario():
     """Descreve os dados atuais informados sem criar fluxos por período."""
+    labor_scenarios = estimate_development_scenarios(
+        team_members=2,
+        calendar_weeks=39,
+        workdays_per_week=[5, 6, 7],
+        daily_team_hours=6,
+        opportunity_cost_per_team_hour=20,
+    )
     return {
         "project": "Ctrl the Witch",
+        "development_calendar_months": {
+            "value": 9,
+            "classification": "informado pela equipe",
+        },
+        "calendar_weeks_approx": {
+            "value": 39,
+            "classification": "premissa de conversão",
+        },
         "publication": {
             "platform": "itch.io",
-            "price": "gratuito",
+            "current_price": "gratuito",
             "classification": "informado",
         },
+        "financial_initial_investment": {
+            "amount": 0.00,
+            "classification": "informado pela equipe",
+        },
         "labor_investment": {
-            "amount": 10800.00,
-            "classification": "estimado",
-            "type": "custo econômico de oportunidade",
-            "cash_disbursement": None,
+            "daily_team_hours": 6,
+            "opportunity_cost_per_team_hour": 20.00,
+            "scenarios": labor_scenarios["scenarios"],
+            "classification": "estimativas retrospectivas",
         },
         "current_commercial_revenue": {
             "amount": 0.00,
@@ -189,9 +210,18 @@ def ctrl_the_witch_current_scenario():
             "sales": 0.00,
             "donations": 0.00,
         },
+        "planned_sale_price": {
+            "amount": 20.00,
+            "classification": "planejamento informado, não preço atual verificado",
+        },
+        "planned_monthly_sales_target": {
+            "copies": 10,
+            "classification": "hipótese da equipe, sem validação de mercado",
+        },
         "operating_costs": None,
         "taxes": None,
         "additional_capex": None,
+        "indirect_costs_amount": None,
         "periodicity": None,
         "cash_flows": None,
     }
@@ -201,44 +231,59 @@ def print_ctrl_the_witch_current_scenario(scenario):
     """Exibe os dados disponíveis e as limitações do fluxo de caixa atual."""
     print("\n========== FLUXO DE CAIXA — CTRL THE WITCH ==========")
     print(
-        f"Publicação: {scenario['publication']['platform']} "
-        f"{scenario['publication']['price']} "
+        f"Publicação atual informada: {scenario['publication']['platform']} "
+        f"{scenario['publication']['current_price']} "
         f"({scenario['publication']['classification']})."
     )
     print(
-        "Investimento econômico estimado em mão de obra: "
-        f"R$ {scenario['labor_investment']['amount']:.2f} "
-        f"({scenario['labor_investment']['classification']})."
+        "Investimento financeiro inicial informado pela equipe: "
+        f"R$ {_format_brl(scenario['financial_initial_investment']['amount'])}."
     )
-    print(
-        "Desembolso financeiro correspondente à mão de obra: "
-        "não informado; o valor estimado não é presumido como pagamento."
-    )
+    print("Custo de oportunidade estimado — cenários, não horas registradas:")
+    for estimate in scenario["labor_investment"]["scenarios"]:
+        print(
+            f"- {estimate['workdays_per_week']} dias/semana: "
+            f"{estimate['estimated_workdays']} dias, "
+            f"{estimate['total_team_hours']:g} horas de equipe, "
+            f"R$ {_format_brl(estimate['labor_opportunity_cost'])}."
+        )
     print(
         "Receita comercial atual informada: "
-        f"R$ {scenario['current_commercial_revenue']['amount']:.2f} "
+        f"R$ {_format_brl(scenario['current_commercial_revenue']['amount'])} "
         "(sem vendas nem doações)."
     )
-    print("Custos operacionais: desconhecidos/não levantados.")
-    print("Tributos: desconhecidos/não levantados.")
-    print("CapEx adicional: desconhecido/não levantado.")
+    print(
+        "Plano informado: venda única a R$ 20,00 e meta hipotética de "
+        "10 cópias/mês; não é demanda validada nem preço atual confirmado."
+    )
+    print(
+        "Custos de internet e energia: utilizados, mas sem valores mensurados. "
+        "Outros desembolsos adicionais não foram informados."
+    )
+    print("Tributos, taxas da plataforma e processamento: não informados.")
     print("Periodicidade e horizonte dos dados: não informados.")
     print(
-        "\nLimitação: não é possível montar um fluxo líquido por período "
-        "com os dados disponíveis. A receita atual zero não foi projetada "
-        "para períodos futuros, e custos desconhecidos não foram tratados "
-        "como zero."
+        "\nLimitação: não é possível montar um fluxo líquido completo por "
+        "período nem calcular receita líquida. A receita atual zero não foi "
+        "projetada para períodos futuros, e custos desconhecidos não foram "
+        "tratados como zero."
     )
+
+
+def _format_brl(amount):
+    """Formata valores em reais com separadores brasileiros."""
+    formatted = f"{amount:,.2f}"
+    return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def print_didactic_example():
     """Executa um exemplo hipotético, separado dos dados do jogo."""
     report = calculate_cash_flow(
-        initial_investment=10800,
-        revenues=[5000, 7000, 9000],
-        operating_costs=[1000, 1200, 1500],
-        taxes=[500, 700, 900],
-        capex=[0, 500, 0]
+        initial_investment=1000,
+        revenues=[600, 800, 900],
+        operating_costs=[100, 150, 180],
+        taxes=[50, 70, 80],
+        capex=[25, 0, 50]
     )
 
     print("\nExemplo didático hipotético — não representa o Ctrl the Witch.")

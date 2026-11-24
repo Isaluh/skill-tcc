@@ -82,6 +82,7 @@ Foi verificada a execução com Python 3.11.9.
 
 ```text
 game-economic-engineering/
+├── .gitignore
 ├── .agents/
 │   └── skills/
 │       └── game-economic-engineering/
@@ -98,7 +99,8 @@ game-economic-engineering/
 │           │   ├── game_valuation.py
 │           │   ├── npv_irr.py
 │           │   ├── payback.py
-│           │   └── roi.py
+│           │   ├── roi.py
+│           │   └── sales_model.py
 │           └── tests/
 │               └── test_financial.py
 └── README.md
@@ -115,19 +117,21 @@ game-economic-engineering/
 - `scripts/`: funções e exemplos executáveis de cálculo.
 - `examples/tcc-valuation-report.md`: relatório de caracterização técnica e
   estimativa inicial de investimento do Ctrl the Witch.
-- `tests/`: diretório destinado a testes; atualmente `test_financial.py` não
-  contém casos de teste.
+- `tests/`: testes de regressão com `unittest`, incluindo cenários financeiros
+  atuais e vendas hipotéticas.
+- `.gitignore`: impede versionar arquivos de cache do Python.
 
-Arquivos gerados de cache do Python, como `__pycache__`, não fazem parte da
-estrutura-fonte documentada.
+Arquivos gerados de cache do Python, como `__pycache__`, são ignorados pelo
+Git e não fazem parte da estrutura-fonte.
 
 ## 6. Funcionalidades
 
 ### Implementadas nos scripts
 
-- **Estimativa de custos:** horas totais e por integrante, custo de
-  oportunidade e desembolsos adicionais informados, separados. Desembolsos
-  omitidos permanecem desconhecidos.
+- **Estimativa de custos:** horas totais da equipe e média por integrante
+  sob hipótese de divisão igual, custo de oportunidade com taxa da equipe e
+  desembolsos adicionais informados, separados. Desembolsos omitidos
+  permanecem desconhecidos.
 - **Fluxo de caixa:** calcula fluxos líquidos e saldos por período quando os
   dados necessários são fornecidos. A função retorna o fluxo como incompleto
   quando tributos ou CapEx não foram informados. O cenário atual do Ctrl the
@@ -142,6 +146,11 @@ estrutura-fonte documentada.
   informados.
 - **GVA/EVM:** calcula IDC/CPI, IDP/SPI, variações de custo e prazo, EAC e
   fator estimado de duração a partir de VP, VA, CR e BAC.
+- **Vendas e ponto de equilíbrio:** simula receita bruta mensal/anual; calcula
+  receita líquida somente quando taxas, quantidade de transações e tributos
+  são informados; calcula unidades para break-even somente com custo fixo e
+  margem de contribuição conhecidos. A receita após esses itens não equivale
+  ao lucro total do projeto.
 - **Valoração financeira de projetos de jogos:** `game_valuation.py` reúne
   VPL, TIR, paybacks e ROI. Isso é uma avaliação por indicadores financeiros,
   não uma estimativa automática de preço de mercado do jogo.
@@ -156,7 +165,8 @@ custos, horizonte e TMA. A demonstração atual do Ctrl the Witch não permite
 concluir sua viabilidade financeira.
 
 Os exemplos fixos de EVM, VP/VF, VPL/TIR, Payback e ROI são **hipotéticos** e
-devem ser tratados apenas como demonstrações.
+devem ser tratados apenas como demonstrações. Os cenários de vendas do TCC
+também são hipotéticos, não previsões nem receitas realizadas.
 
 ## 7. Instalação e configuração
 
@@ -223,9 +233,10 @@ alterar arquivos. Exemplos:
 > Analise economicamente este projeto GameMaker apenas em modo de leitura.
 > Diferencie informações verificadas, informadas, estimadas e desconhecidas.
 
-> Estime o custo de desenvolvimento com 2 integrantes, 90 dias, 6 horas
-> diárias para a equipe e R$ 20,00 por hora por integrante. Não presuma
-> desembolsos adicionais.
+> Estime o custo retrospectivo com 2 integrantes, 9 meses (aprox. 39 semanas),
+> 6 horas diárias para a equipe e R$ 20,00 por hora da equipe. Compare 5, 6 e
+> 7 dias por semana. Identifique tudo como cenário estimado, não como horas
+> registradas, e não presuma desembolsos adicionais.
 
 > Com estes fluxos líquidos por período e esta TMA, calcule VPL, TIR, Payback
 > simples e descontado. Informe a periodicidade e identifique limitações.
@@ -248,13 +259,14 @@ Os caminhos da tabela são relativos a
 
 | Script | Finalidade | Entradas principais | Saídas |
 |---|---|---|---|
-| `cost_estimator.py` | Estimar esforço, custo de oportunidade e desembolsos adicionais informados. | Integrantes, dias, horas diárias da equipe, custo/hora/integrante e mapa opcional de desembolsos. A execução direta usa os dados estimados do Ctrl the Witch. | Horas totais e por integrante, custo da mão de obra, desembolsos informados ou desconhecidos e subtotal econômico conhecido. |
+| `cost_estimator.py` | Estimar esforço, custo de oportunidade e desembolsos adicionais informados. | Integrantes, dias, horas diárias da equipe, custo por hora da equipe e mapa opcional de desembolsos. A execução direta calcula cenários de 39 semanas para 5, 6 e 7 dias/semana. | Horas totais de equipe, média por integrante sob divisão igual, custo da mão de obra e desembolsos informados ou desconhecidos. |
 | `cash_flow.py` | Calcular fluxo líquido e saldo acumulado; exibir o estado atual do Ctrl the Witch sem criar projeções. | Investimento inicial, receitas e custos por período; tributos e CapEx precisam ser informados para concluir o cálculo. | Detalhes e totais por período, ou indicação de fluxo incompleto. O modo padrão mostra limitações do cenário atual; `--exemplo-didatico` executa um exemplo hipotético. |
 | `npv_irr.py` | Calcular VP, VF, VPL e TIR. | VP/VF: valor, taxa decimal e períodos. VPL: série começando no período zero e taxa por período. TIR: série com fluxos positivos e negativos. | Valor presente, valor futuro, VPL ou TIR por período. |
 | `payback.py` | Calcular Payback simples e descontado. | Série iniciada com investimento negativo; fluxos futuros não negativos; taxa por período para o descontado. | Número de períodos para recuperação ou `None` se não recuperar no horizonte. |
 | `roi.py` | Calcular o retorno percentual sobre investimento. | Investimento maior que zero e retorno total. | ROI em percentual. |
 | `agile_evm.py` | Calcular indicadores de GVA/EVM. | VP (`planned_value`), VA (`earned_value`), CR (`actual_cost`) e BAC. | IDC/CPI, IDP/SPI, variações de custo e prazo, EAC e fator estimado de duração. |
 | `game_valuation.py` | Consolidar indicadores financeiros para um projeto de jogo e representar o cenário atual do Ctrl the Witch. | Investimento, fluxos líquidos futuros, TMA, periodicidade e classificação dos dados nas funções genéricas. | VPL, TIR, Paybacks e ROI, ou justificativa de não cálculo. A execução padrão mostra o cenário atual; `--exemplo-hipotetico` é separado. |
+| `sales_model.py` | Simular vendas brutas, receita líquida informada e ponto de equilíbrio. | Preço e cópias mensais para cenários; taxas, transações e tributos para receita líquida; custo fixo e margem de contribuição para break-even. | Receita bruta mensal/anual; receita líquida ou lista de dados ausentes; número inteiro de cópias ou justificativa de não cálculo. |
 
 Os módulos importados entre scripts são arquivos locais do próprio diretório.
 Não há dependência de pacote externo.
@@ -268,59 +280,115 @@ apontamentos de horas auditados.
 | Dado | Valor | Classificação/observação |
 |---|---:|---|
 | Engine | GameMaker | Informação do projeto |
-| Plataforma de distribuição identificada | Windows | Caracterização técnica |
+| Alvo de build | Windows | Opção de exportação identificada; não foi encontrado build empacotado |
+| Canal de publicação | itch.io | Informado pela equipe; publicação atual gratuita |
 | Integrantes | 2 | Informação da equipe |
-| Período considerado | 90 dias | Estimado |
-| Jornada diária | 6 horas para a equipe | Premissa estimada |
-| Horas totais estimadas | 540 horas | 90 dias × 6 horas/dia |
-| Horas por integrante, com divisão igual | 270 horas | 540 ÷ 2 |
-| Custo de oportunidade | R$ 20,00 por hora por integrante | Premissa estimada |
-| Investimento econômico estimado em mão de obra | R$ 10.800,00 | 540 horas × R$ 20,00/hora |
+| Duração informada | 9 meses | Equipe; aproximada como 39 semanas para cenários |
+| Jornada diária | 6 horas para a equipe inteira | Informação da equipe; não é apontamento de horas |
+| Custo de oportunidade | R$ 20,00 por hora da equipe | Informação da equipe |
+| Desembolso financeiro inicial | R$ 0,00 | Informado pela equipe; não equivale a custo total zero |
+| Receita comercial atual | R$ 0,00 | Informada; sem vendas nem doações |
+| Preço futuro planejado | R$ 20,00 por cópia | Plano, não preço atual verificado |
+| Meta comercial | 10 cópias/mês | Hipótese sem validação de mercado |
+
+#### Cenários de custo de oportunidade
+
+| Dias/semana | Dias estimados (39 semanas) | Horas da equipe | Custo de oportunidade |
+|---:|---:|---:|---:|
+| 5 | 195 | 1.170 | R$ 23.400,00 |
+| 6 | 234 | 1.404 | R$ 28.080,00 |
+| 7 | 273 | 1.638 | R$ 32.760,00 |
+
+São estimativas retrospectivas sob diferentes hipóteses de dias trabalhados.
+Não há registro de ponto que confirme qualquer cenário. O custo é econômico,
+calculado como horas estimadas da equipe × R$ 20,00 por hora da equipe.
 
 **Investimento econômico** representa o valor do trabalho dedicado ao jogo
 em comparação com o uso alternativo desse tempo. Não comprova que a equipe
-tenha recebido ou desembolsado R$ 10.800,00. Desembolso financeiro efetivo
-com mão de obra, licenças, assets, ferramentas, energia, internet e
-equipamentos não foi quantificado no relatório.
+tenha recebido ou desembolsado o custo de oportunidade estimado. A equipe
+informou desembolso inicial de R$ 0,00. Energia e internet foram usadas,
+mas não tiveram seus valores mensurados; nenhum custo adicional quantificado
+foi fornecido, o que não comprova que todas as categorias custaram zero.
 
-O cenário atual também registra publicação gratuita no itch.io e receita
-comercial informada de R$ 0,00, sem vendas nem doações. Esse valor atual não
-é uma projeção de receitas futuras.
+A publicação atual foi informada como gratuita e sem receita comercial.
+Separadamente, a equipe planeja venda única a R$ 20,00 no itch.io e definiu
+uma meta hipotética de 10 cópias/mês. As simulações abaixo são receita bruta:
+
+| Cópias/mês | Cópias/ano | Receita bruta/mês | Receita líquida/mês | Receita bruta/ano | Receita líquida/ano |
+|---:|---:|---:|---|---:|---|
+| 2 | 24 | R$ 40,00 | Não calculável | R$ 480,00 | Não calculável |
+| 10 | 120 | R$ 200,00 | Não calculável | R$ 2.400,00 | Não calculável |
+| 25 | 300 | R$ 500,00 | Não calculável | R$ 6.000,00 | Não calculável |
+
+Esses cenários não representam vendas realizadas, demanda validada ou receita
+líquida. O revenue share do itch.io, as taxas de processamento, o número de
+transações, os tributos e os custos operacionais do projeto não foram
+informados. A receita líquida e os pontos de equilíbrio completos permanecem
+indeterminados. Os números de cópias para recuperar o custo econômico usando
+R$ 20,00 de receita bruta por cópia seriam apenas limites brutos teóricos:
+1.170, 1.404 ou 1.638 cópias nos três cenários de custo, antes de taxas,
+tributos e quaisquer outros custos.
+
+Segundo a [documentação oficial de pagamentos do itch.io](https://itch.io/docs/creators/payments),
+consultada em 2026-11-24, o vendedor configura sua participação entre 0% e
+100%; 10% é apenas o exemplo da página. Os exemplos de taxas de processadores
+em torno de US$ 0,30 + 2,9% variam por serviço e não foram aplicados à
+simulação em reais. A modalidade escolhida também afeta moeda e
+responsabilidades tributárias; a configuração do jogo é desconhecida.
+
+Uma análise estática anterior também registrou riscos em progressão e
+salvamento (`fase.id` versus índice de fase e `mana_ganha` não persistido),
+diferenças entre alguns preços exibidos e cobrados em melhorias, referência
+a um shader SDF ausente e extensão `ext_capslock` usada pelo sistema de
+digitação. Esses são achados técnicos, não evidência de falhas confirmadas em
+execução nem de faturamento comercial. A mana é economia virtual do jogo.
+A leitura de código também identificou sistemas de digitação, inventário,
+pedidos/NPCs, minijogos, progressão, menus, configurações, persistência e
+áudio; isso não substitui playtests.
 
 ## 11. Demonstração dos resultados
 
 O [relatório de valoração do TCC](.agents/skills/game-economic-engineering/examples/tcc-valuation-report.md)
-documenta a caracterização técnica do Ctrl the Witch e a estimativa inicial
-de investimento. Entre os números registrados estão:
+documenta os dados técnicos auditados, as premissas econômicas da equipe,
+os cenários de esforço e receita bruta e as limitações dos indicadores.
+Entre os dados registrados estão:
 
-- 587 arquivos e 92,89 MB no inventário técnico;
-- 140 arquivos GML e 10.891 linhas GML reportadas;
+- 587 arquivos e 97,40 MB decimais (92,89 MiB) no inventário técnico;
+- 140 arquivos GML e 12.966 linhas físicas nesses arquivos;
 - 152 arquivos na pasta de objetos, 48 na pasta de scripts e 27 na pasta de
   salas;
 - 270 arquivos de sprites, 22 de sons e 44 de fontes;
 - oito salas principais identificadas pelo nome;
-- investimento econômico estimado em mão de obra de R$ 10.800,00, conforme as
-  premissas da seção anterior.
+- cenários estimados de custo de oportunidade de R$ 23.400,00, R$ 28.080,00
+  e R$ 32.760,00, sem registros de horas efetivas.
 
 Os quantitativos descrevem o inventário e não medem, isoladamente,
-complexidade, qualidade ou produtividade. O relatório não documenta fluxos
-líquidos futuros, TMA, receitas futuras, VPL, TIR, Payback ou ROI calculados
-com dados reais do jogo. Portanto, não há base documentada nesse relatório
-para apresentar esses indicadores como resultados do Ctrl the Witch.
+complexidade, qualidade ou produtividade. O histórico de commits não contém
+registros que permitam reconstruir esforço ou EVM. O relatório não documenta
+fluxos líquidos futuros, TMA, taxas, tributos ou custos mensurados necessários
+para calcular receita líquida, VPL, TIR, Payback, ROI ou ponto de equilíbrio
+completo para o Ctrl the Witch.
 
 ## 12. Testes e validação
 
-O projeto não declara frameworks de teste nem dependências externas. O
-arquivo `tests/test_financial.py` está vazio; portanto, atualmente não há
-casos de teste automatizados. O comando padrão de descoberta do `unittest`
-funciona, mas executa zero testes:
+O projeto não declara frameworks de teste nem dependências externas. Os testes
+usam somente `unittest`, biblioteca padrão do Python:
 
 ```powershell
-python -m unittest discover -s .agents/skills/game-economic-engineering/tests -v
+python -m unittest discover -s .agents/skills/game-economic-engineering/tests -p "test_*.py" -v
 ```
 
-Os scripts podem ser executados diretamente para verificar que iniciam e
-produzem suas demonstrações:
+Os testes cobrem estimativa de custos, fluxo de caixa, VP/VF, VPL/TIR,
+Payback, ROI, GVA/EVM, valoração, vendas brutas/líquidas e ponto de
+equilíbrio, incluindo entradas inválidas e dados incompletos.
+
+Para validar sintaxe dos scripts:
+
+```powershell
+python -m compileall .agents/skills/game-economic-engineering
+```
+
+Os scripts com demonstrações podem ser executados:
 
 ```powershell
 python .agents/skills/game-economic-engineering/scripts/cost_estimator.py
@@ -334,10 +402,9 @@ python .agents/skills/game-economic-engineering/scripts/roi.py
 python .agents/skills/game-economic-engineering/scripts/agile_evm.py
 ```
 
-Essas execuções são verificações de funcionamento e demonstrações, não uma
-suíte de testes que valide todas as entradas e casos-limite. Os exemplos de
-`npv_irr.py`, `payback.py`, `roi.py` e `agile_evm.py` usam dados hipotéticos;
-não interprete sua saída como avaliação real do jogo.
+`sales_model.py` contém funções importáveis sem demonstração de linha de
+comando. As execuções diretas dos demais módulos são exemplos; não interprete
+saídas hipotéticas como resultados reais do jogo.
 
 ## 13. Conteúdos de Engenharia Econômica
 
@@ -349,6 +416,7 @@ seguintes conteúdos:
 | Processo de decisão e comparação de alternativas | Comparar desenvolver, adquirir, contratar, adiar ou substituir componentes. |
 | Valor do dinheiro no tempo e TMA | VP, VF, taxa por período e desconto de fluxos. |
 | Custos e fluxo de caixa | Investimento, custo de oportunidade, OpEx, CapEx, tributos e fluxos líquidos. |
+| Vendas e ponto de equilíbrio | Simulação de receita bruta; cálculos líquidos e de break-even dependem de custos/taxas informados. |
 | Viabilidade econômica | VPL, TIR, Payback simples e descontado e ROI. |
 | Depreciação e tributos | Orientação metodológica; não há calculadora específica ou dados tributários do TCC. |
 | Métricas de produtos digitais | CAC e LTV quando aplicáveis; dependem de dados de aquisição, receita e clientes. |
@@ -367,11 +435,18 @@ material oficial da disciplina.
 
 - Os quantitativos técnicos são os registrados no relatório e não substituem
   uma avaliação qualitativa ou revisão independente do jogo.
-- O período, as horas e a taxa horária usados no custo de mão de obra são
-  premissas estimadas e devem ser confirmados pela equipe.
+- A equipe informou 9 meses, 6 horas diárias para o grupo e R$ 20,00/h para
+  a equipe; dias trabalhados por semana não foram apontados. Custos de
+  oportunidade são apresentados como cenários estimados.
 - O custo de oportunidade não equivale automaticamente a desembolso.
-- Custos indiretos, CapEx adicional e tributos não foram levantados; não
-  devem ser interpretados como zero.
+- O desembolso inicial informado é R$ 0,00, mas energia e internet não foram
+  mensuradas e outros custos indiretos, CapEx e tributos não foram levantados.
+- O preço futuro de R$ 20,00 e 10 cópias mensais são premissas de plano; a
+  publicação atual continua identificada como gratuita até confirmação de
+  mudança.
+- Taxas do itch.io e do processador dependem de configuração, país, moeda,
+  método de pagamento e transações. A documentação oficial não determina a
+  taxa efetiva deste projeto.
 - Receita comercial atual informada como zero não permite assumir receita
   futura nula ou positiva.
 - VPL, TIR e Payback exigem fluxos por período e periodicidade; VPL e Payback
