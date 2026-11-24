@@ -15,6 +15,9 @@ Indicadores:
 Projeto: Game Economic Engineering
 """
 
+from math import isfinite
+from numbers import Real
+
 
 def calculate_evm(planned_value, earned_value, actual_cost, bac):
     """
@@ -29,6 +32,15 @@ def calculate_evm(planned_value, earned_value, actual_cost, bac):
     """
 
     values = [planned_value, earned_value, actual_cost, bac]
+
+    if any(
+        isinstance(value, bool) or not isinstance(value, Real)
+        for value in values
+    ):
+        raise TypeError("VP, VA, CR e BAC devem ser valores numéricos.")
+
+    if any(not isfinite(value) for value in values):
+        raise ValueError("VP, VA, CR e BAC devem ser valores finitos.")
 
     if any(value < 0 for value in values):
         raise ValueError("Os valores não podem ser negativos.")

@@ -7,6 +7,33 @@ Modelagem de fluxo de caixa para projetos de software e jogos.
 Projeto: Game Economic Engineering
 """
 
+from math import isfinite
+from numbers import Real
+
+
+def _validate_money_series(name, values, periods=None):
+    """Valida uma sequência de valores monetários não negativos."""
+    if isinstance(values, (str, bytes)) or not isinstance(values, (list, tuple)):
+        raise TypeError(f"{name} deve ser uma lista ou tupla.")
+
+    if periods is not None and len(values) != periods:
+        raise ValueError(
+            f"{name} deve possuir exatamente {periods} períodos."
+        )
+
+    for index, value in enumerate(values, start=1):
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise TypeError(
+                f"{name}, período {index}: informe um número."
+            )
+
+        if not isfinite(value) or value < 0:
+            raise ValueError(
+                f"{name}, período {index}: valor deve ser finito e não negativo."
+            )
+
+    return tuple(float(value) for value in values)
+
 
 def calculate_cash_flow(
     initial_investment,
@@ -18,41 +45,64 @@ def calculate_cash_flow(
     """
     Calcula o fluxo de caixa por período.
 
-    initial_investment: investimento inicial.
-    revenues: receitas por período.
-    operating_costs: custos operacionais por período.
-    taxes: tributos por período.
-    capex: investimentos adicionais por período.
+    Tributos e CapEx não informados permanecem desconhecidos.
+    Para assumir ausência desses custos, informe listas com zeros.
 
-    Retorna um dicionário com os resultados.
+    Retorna um dicionário com os resultados e a situação dos dados.
     """
 
-    if initial_investment < 0:
-        raise ValueError("O investimento inicial não pode ser negativo.")
+    if isinstance(initial_investment, bool) or not isinstance(
+        initial_investment, Real
+    ):
+        raise TypeError("O investimento inicial deve ser numérico.")
 
+    if not isfinite(initial_investment) or initial_investment < 0:
+        raise ValueError(
+            "O investimento inicial deve ser finito e não negativo."
+        )
+
+    revenues = _validate_money_series("revenues", revenues)
     if not revenues:
-        raise ValueError("Informe as receitas.")
-
-    if len(revenues) != len(operating_costs):
-        raise ValueError("Receitas e custos devem ter o mesmo tamanho.")
+        raise ValueError("Informe pelo menos uma receita.")
 
     periods = len(revenues)
 
-    if taxes is None:
-        taxes = [0.0] * periods
+    operating_costs = _validate_money_series(
+        "operating_costs", operating_costs, periods
+    )
 
-    if capex is None:
-        capex = [0.0] * periods
+    taxes_informed = taxes is not None
+    capex_informed = capex is not None
 
-    if len(taxes) != periods or len(capex) != periods:
-        raise ValueError("Todos os dados devem possuir o mesmo número de períodos.")
+    if taxes_informed:
+        taxes = _validate_money_series("taxes", taxes, periods)
 
-    if any(value < 0 for value in revenues + operating_costs + taxes + capex):
-        raise ValueError("Receitas, custos, tributos e CapEx devem ser não negativos.")
+    if capex_informed:
+        capex = _validate_money_series("capex", capex, periods)
 
-    cash_flows = [-initial_investment]
-    accumulated = -initial_investment
+    if not taxes_informed or not capex_informed:
+        return {
+            "calculated": False,
+            "initial_investment": float(initial_investment),
+            "revenues": revenues,
+            "operating_costs": operating_costs,
+            "taxes": taxes,
+            "capex": capex,
+            "missing_data": [
+                name for name, informed in (
+                    ("taxes", taxes_informed),
+                    ("capex", capex_informed),
+                )
+                if not informed
+            ],
+            "message": (
+                "Fluxo incompleto: informe tributos e CapEx, "
+                "ou informe listas de zeros quando forem comprovadamente nulos."
+            ),
+        }
 
+    cash_flows = [-float(initial_investment)]
+    accumulated = -float(initial_investment)
     details = []
 
     for period in range(periods):
@@ -77,7 +127,8 @@ def calculate_cash_flow(
         })
 
     return {
-        "initial_investment": initial_investment,
+        "calculated": True,
+        "initial_investment": float(initial_investment),
         "cash_flows": cash_flows,
         "details": details,
         "total_revenue": sum(revenues),
@@ -90,6 +141,12 @@ def calculate_cash_flow(
 
 def print_cash_flow(report):
     """Exibe o fluxo de caixa organizado."""
+
+    if not report["calculated"]:
+        print("\n========== FLUXO DE CAIXA INCOMPLETO ==========")
+        print(report["message"])
+        print("Dados não informados:", ", ".join(report["missing_data"]))
+        return
 
     print("\n========== FLUXO DE CAIXA ==========")
 
@@ -112,12 +169,7 @@ def print_cash_flow(report):
 
 
 def ctrl_the_witch_current_scenario():
-    """
-    Descreve os dados atuais informados sem criar fluxos por período.
-
-    O investimento em mão de obra é um custo econômico estimado e não é
-    tratado como desembolso financeiro efetivo.
-    """
+    """Descreve os dados atuais informados sem criar fluxos por período."""
     return {
         "project": "Ctrl the Witch",
         "publication": {
@@ -172,16 +224,15 @@ def print_ctrl_the_witch_current_scenario(scenario):
     print("CapEx adicional: desconhecido/não levantado.")
     print("Periodicidade e horizonte dos dados: não informados.")
     print(
-        "\nLimitação: não é possível montar um fluxo líquido por período ou "
-        "calcular saldo acumulado sem os custos e a periodicidade. "
-        "A receita atual zero não foi projetada para períodos futuros, e "
-        "custos desconhecidos não foram tratados como zero."
+        "\nLimitação: não é possível montar um fluxo líquido por período "
+        "com os dados disponíveis. A receita atual zero não foi projetada "
+        "para períodos futuros, e custos desconhecidos não foram tratados "
+        "como zero."
     )
 
 
 def print_didactic_example():
-    """Executa um exemplo hipotético, separado dos dados do Ctrl the Witch."""
-    # Valores didáticos; não representam o Ctrl the Witch.
+    """Executa um exemplo hipotético, separado dos dados do jogo."""
     report = calculate_cash_flow(
         initial_investment=10800,
         revenues=[5000, 7000, 9000],
