@@ -22,12 +22,6 @@ organizar premissas e calcular indicadores financeiros de forma determinística.
 
 ## 2. Sobre o projeto
 
-Projetos de jogos combinam esforço de desenvolvimento, ferramentas, conteúdo,
-publicação e possíveis receitas. Sem organizar esses dados, é difícil
-comparar alternativas, compreender o custo de oportunidade ou avaliar a
-viabilidade econômica sem confundir estimativas com valores efetivamente
-recebidos ou pagos.
-
 O Game Economic Engineering reúne uma **Agent Skill** especializada e scripts
 Python para apoiar esse trabalho. A Skill orienta um agente de Inteligência
 Artificial (IA) a examinar os dados do jogo, solicitar informações ausentes,
@@ -281,60 +275,61 @@ apontamentos de horas auditados.
 |---|---:|---|
 | Engine | GameMaker | Informação do projeto |
 | Alvo de build | Windows | Opção de exportação identificada; não foi encontrado build empacotado |
-| Canal de publicação | itch.io | Informado pela equipe; publicação atual gratuita |
+| Canal de publicação | itch.io | O levantamento anterior dizia que a publicação era gratuita; configuração atual não verificada |
 | Integrantes | 2 | Informação da equipe |
-| Duração informada | 9 meses | Equipe; aproximada como 39 semanas para cenários |
+| Duração informada | 9 meses, aproximados como 39 semanas | Informação da equipe |
+| Dias de trabalho | 6 dias por semana (segunda a sábado) | Informação da equipe |
 | Jornada diária | 6 horas para a equipe inteira | Informação da equipe; não é apontamento de horas |
-| Custo de oportunidade | R$ 20,00 por hora da equipe | Informação da equipe |
+| Custo de oportunidade | R$ 20,00 por hora da equipe de 2 integrantes | Informação da equipe |
 | Desembolso financeiro inicial | R$ 0,00 | Informado pela equipe; não equivale a custo total zero |
 | Receita comercial atual | R$ 0,00 | Informada; sem vendas nem doações |
-| Preço futuro planejado | R$ 20,00 por cópia | Plano, não preço atual verificado |
+| Preço por unidade | R$ 20,00 | Informado pelo usuário |
 | Meta comercial | 10 cópias/mês | Hipótese sem validação de mercado |
+| Tributo usado na simulação | 10% da receita bruta | Informação da equipe; base aplicada como premissa |
 
-#### Cenários de custo de oportunidade
+#### Estimativa de custo de oportunidade
 
-| Dias/semana | Dias estimados (39 semanas) | Horas da equipe | Custo de oportunidade |
+| Dias/semana | Dias estimados | Horas da equipe | Custo de oportunidade |
 |---:|---:|---:|---:|
-| 5 | 195 | 1.170 | R$ 23.400,00 |
 | 6 | 234 | 1.404 | R$ 28.080,00 |
-| 7 | 273 | 1.638 | R$ 32.760,00 |
 
-São estimativas retrospectivas sob diferentes hipóteses de dias trabalhados.
-Não há registro de ponto que confirme qualquer cenário. O custo é econômico,
-calculado como horas estimadas da equipe × R$ 20,00 por hora da equipe.
+Esta é uma estimativa retrospectiva baseada na jornada informada, não em
+registros de ponto. O custo é calculado como 1.404 horas da equipe ×
+R$ 20,00 por hora da equipe.
 
 **Investimento econômico** representa o valor do trabalho dedicado ao jogo
 em comparação com o uso alternativo desse tempo. Não comprova que a equipe
-tenha recebido ou desembolsado o custo de oportunidade estimado. A equipe
-informou desembolso inicial de R$ 0,00. Energia e internet foram usadas,
-mas não tiveram seus valores mensurados; nenhum custo adicional quantificado
-foi fornecido, o que não comprova que todas as categorias custaram zero.
+tenha recebido ou desembolsado esse valor. O desembolso financeiro inicial
+informado é R$ 0,00. Energia e internet foram usadas, mas seus custos não
+foram medidos; isso não significa que todas as categorias custaram zero.
 
-A publicação atual foi informada como gratuita e sem receita comercial.
-Separadamente, a equipe planeja venda única a R$ 20,00 no itch.io e definiu
-uma meta hipotética de 10 cópias/mês. As simulações abaixo são receita bruta:
+O levantamento anterior informava que a publicação no itch.io era gratuita e
+não tinha receita comercial. O usuário informou que o preço do jogo é
+R$ 20,00 por unidade; a configuração atual da página não foi verificada. A
+meta de 10 cópias/mês é hipotética. As simulações descontam apenas o tributo
+informado de 10% da receita bruta:
 
-| Cópias/mês | Cópias/ano | Receita bruta/mês | Receita líquida/mês | Receita bruta/ano | Receita líquida/ano |
-|---:|---:|---:|---|---:|---|
-| 2 | 24 | R$ 40,00 | Não calculável | R$ 480,00 | Não calculável |
-| 10 | 120 | R$ 200,00 | Não calculável | R$ 2.400,00 | Não calculável |
-| 25 | 300 | R$ 500,00 | Não calculável | R$ 6.000,00 | Não calculável |
+| Cópias/mês | Cópias/ano | Receita bruta/mês | Tributo/mês | Após tributo/mês | Receita bruta/ano | Tributo/ano | Após tributo/ano |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 24 | R$ 40,00 | R$ 4,00 | R$ 36,00 | R$ 480,00 | R$ 48,00 | R$ 432,00 |
+| 10 | 120 | R$ 200,00 | R$ 20,00 | R$ 180,00 | R$ 2.400,00 | R$ 240,00 | R$ 2.160,00 |
+| 25 | 300 | R$ 500,00 | R$ 50,00 | R$ 450,00 | R$ 6.000,00 | R$ 600,00 | R$ 5.400,00 |
 
-Esses cenários não representam vendas realizadas, demanda validada ou receita
-líquida. O revenue share do itch.io, as taxas de processamento, o número de
-transações, os tributos e os custos operacionais do projeto não foram
-informados. A receita líquida e os pontos de equilíbrio completos permanecem
-indeterminados. Os números de cópias para recuperar o custo econômico usando
-R$ 20,00 de receita bruta por cópia seriam apenas limites brutos teóricos:
-1.170, 1.404 ou 1.638 cópias nos três cenários de custo, antes de taxas,
-tributos e quaisquer outros custos.
+Esses cenários não representam vendas realizadas nem previsões. “Após
+tributo” não é a receita líquida total: ainda faltam a participação do
+itch.io, taxas de processamento, reembolsos, outros custos e a confirmação
+do regime e da base tributária. Considerando somente o tributo informado,
+seriam necessárias 1.560 cópias a R$ 18,00 após tributo para recuperar os
+R$ 28.080,00 estimados de custo de oportunidade. Esse não é o ponto de
+equilíbrio completo.
 
 Segundo a [documentação oficial de pagamentos do itch.io](https://itch.io/docs/creators/payments),
 consultada em 2026-11-24, o vendedor configura sua participação entre 0% e
-100%; 10% é apenas o exemplo da página. Os exemplos de taxas de processadores
-em torno de US$ 0,30 + 2,9% variam por serviço e não foram aplicados à
-simulação em reais. A modalidade escolhida também afeta moeda e
-responsabilidades tributárias; a configuração do jogo é desconhecida.
+100%. Essa participação é diferente do tributo de 10% informado pela equipe.
+As taxas do processador variam por serviço e não foram aplicadas à simulação
+em reais. A configuração da página do jogo não foi verificada. O regime e a
+base tributária também não foram confirmados; os 10% são usados apenas como
+premissa de cálculo.
 
 Uma análise estática anterior também registrou riscos em progressão e
 salvamento (`fase.id` versus índice de fase e `mana_ganha` não persistido),
@@ -359,13 +354,13 @@ Entre os dados registrados estão:
   salas;
 - 270 arquivos de sprites, 22 de sons e 44 de fontes;
 - oito salas principais identificadas pelo nome;
-- cenários estimados de custo de oportunidade de R$ 23.400,00, R$ 28.080,00
-  e R$ 32.760,00, sem registros de horas efetivas.
+- estimativa de custo de oportunidade de R$ 28.080,00, baseada na jornada
+  informada, sem registros de horas efetivas.
 
 Os quantitativos descrevem o inventário e não medem, isoladamente,
 complexidade, qualidade ou produtividade. O histórico de commits não contém
-registros que permitam reconstruir esforço ou EVM. O relatório não documenta
-fluxos líquidos futuros, TMA, taxas, tributos ou custos mensurados necessários
+registros que permitam reconstruir esforço ou EVM. O relatório simula vendas
+após o tributo informado de 10%, mas não documenta taxas e custos suficientes
 para calcular receita líquida, VPL, TIR, Payback, ROI ou ponto de equilíbrio
 completo para o Ctrl the Witch.
 
@@ -466,12 +461,8 @@ Faculdade SENAI FATESG, na disciplina de Engenharia Econômica.
 
 **Integrantes:**
 
-- Integrante 1: ____________________________________  RA: ______________
-- Integrante 2: ____________________________________  RA: ______________
+- Integrante 1: Augusto Lobo 
+- Integrante 2: Heloira Medeiros
 
 **Docente:** Msc. Ujeverson Tavares Sampaio
 
-## 16. Licença
-
-Não foi encontrada uma licença especificada para este repositório. Os termos
-de uso, cópia e distribuição ainda precisam ser definidos pelos autores.
