@@ -14,7 +14,7 @@ from cost_estimator import estimate_development_scenarios
 
 
 def _validate_money_series(name, values, periods=None):
-    """Valida uma sequência de valores monetários não negativos."""
+    """Valida de valores monetários não negativos."""
     if isinstance(values, (str, bytes)) or not isinstance(values, (list, tuple)):
         raise TypeError(f"{name} deve ser uma lista ou tupla.")
 
